@@ -6,7 +6,7 @@ import argparse
 import psMat as matrix
 
 glyph_templates = { # these are all paths to make the character associated. I made them
-    "base": "v92h92v-92zm1,1h90v90h-90z",
+    "base": "M1,1v92h92v-92zm1,1h90v90h-90z",
     "0":"v40h24v-40zm8,8h8v24h-8z",
     "1":"v8h8v24h-8v8h24v-8h-8v-32z",
     "2":"v8h16v8h-16v24h24v-8h-16v-8h16v-24z",
@@ -137,7 +137,7 @@ def main():
 
 def gen_svg(path):
     with open(TEMP_FILE, 'w') as f:
-        f.write('<svg viewBox="0 0 {} {}" fill="#000"><path d="M1,1{}"/></svg>'.format(
+        f.write('<svg viewBox="0 0 {} {}" fill="#000"><path d="{}"/></svg>'.format(
             GLYPH_TEMPLATE_SIZE, GLYPH_TEMPLATE_SIZE, path
         ))
 
