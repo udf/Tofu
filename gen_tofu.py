@@ -3,32 +3,9 @@
 import fontforge
 import progressbar
 import argparse
-import psMat as matrix
+import os
 
-glyph_templates = { # these are all paths to make the character associated. I made them
-    "base": "M1,1v92h92v-92zm1,1h90v90h-90z",
-    "0":"v40h24v-40zm8,8h8v24h-8z",
-    "1":"v8h8v24h-8v8h24v-8h-8v-32z",
-    "2":"v8h16v8h-16v24h24v-8h-16v-8h16v-24z",
-    "3":"v8h16v8h-16v8h16v8h-16v8h24v-40z",
-    "4":"v24h16v16h8v-40h-8v16h-8v-16z",
-    "5":"v24h16v8h-16v8h24v-24h-16v-8h16v-8z",
-    "6":"v40h24v-24h-16v-8h16v-8zm8,24h8v8h-8z",
-    "7":"v8h16v32h8v-40z",
-    "8":"v40h24v-40zm8,8h8v8h-8zm0,16h8v8h-8z",
-    "9":"v24h16v16h8v-40zm8,8h8v8h-8z",
-    "A":"v40h8v-16h8v16h8v-40zm8,8h8v8h-8z",
-    "B":"v40h24v-16h-8v8h-8v-8h8v-8h-8v-8h8v8h8v-16z",
-    "C":"v40h24v-8h-16v-24h16v-8z",
-    "D":"v40h16v-8h8v-24h-8v24h-8v-24h8v-8z",
-    "E":"v40h24v-8h-16v-8h16v-8h-16v-8h16v-8z",
-    "F":"v40h8v-16h16v-8h-16v-8h16v-8z",
-}
-
-GLYPH_TEMPLATE_SIZE = 94
-GLYPH_SIZE = 1000
-SCALE_FACTOR = GLYPH_SIZE / GLYPH_TEMPLATE_SIZE
-TEMP_FILE = 'tmp.svg'
+TEMP_FILE = 'temp.sfd'
 
 def irange(start, end=None):
     if end is None:
@@ -36,6 +13,12 @@ def irange(start, end=None):
     else:
         return range(start, end+1)
 
+def align_point(i, count, item_size, spacing, total_size, reverse=False):
+    if reverse:
+        i = count - i - 1
+    # remaining_space / 2 + current_item * size_of_one_item
+    # remaining_space = total_size - space_taken_by_all_items
+    return (total_size - (count * (item_size + spacing) - spacing)) / 2 + i * (item_size + spacing)
 
 def main():
     parser = argparse.ArgumentParser(description='Generate Tofu font.')
@@ -46,8 +29,8 @@ def main():
     parser.add_argument('end', metavar='End', type=str, nargs=1,
                     help='hex code for ending char. Ex. 0FFF or FFFF')
 
-    parser.add_argument('-o', '--otf', action='store_true',
-                    help='output to an otf file rather than ttf')
+    parser.add_argument('-t', '--ttf', action='store_true',
+                    help='output to an ttf file rather than otf')
 
     args = parser.parse_args()
 
@@ -55,46 +38,63 @@ def main():
     end_str = args.end[0].upper()
 
     if len(start_str) > 5 or len(start_str) < 4:
-        print("Start argument must be 4 or 5 characters long. Ex. 0000 or 10000.")
+        print('Start argument must be 4 or 5 characters long. Ex. 0000 or 10000.')
         exit(2)
 
     if len(end_str) > 5 or len(end_str) < 4:
-        print("End argument must be 4 or 5 characters long. Ex. 0000 or 10000.")
+        print('End argument must be 4 or 5 characters long. Ex. 0000 or 10000.')
         exit(2)
 
     try:
         start = int(start_str, 16)
     except ValueError:
-        print("Start argument must only contain hexadecimal characters.")
+        print('Start argument must only contain hexadecimal characters.')
         exit(2)
 
     try:
         end = int(end_str, 16)
     except ValueError:
-        print("End argument must only contain hexadecimal characters.")
+        print('End argument must only contain hexadecimal characters.')
         exit(2)
 
     if start >= end:
-        print("Start must be less than end")
+        print('Start must be less than end')
         exit(2)
 
-    if (end - start + (2 if args.otf else 1) + len(glyph_templates)) > 65535:
-        print("Range is (note: 17 spaces are reserved for template glyphs)", end - start + 1)
+    if (end - start + (1 if args.ttf else 2) + 17) > 65535:
+        print('Range is (note: 17 spaces are reserved for template glyphs)', end - start + 1 + 17)
 
         if args.otf:
-            print("Range max is 65534 characters long. Otf includes one by default?")
+            print('Range max is 65534 characters long. Otf includes one by default?')
         else:
-            print("Range max is 65535 characters long.")
+            print('Range max is 65535 characters long.')
         exit(2)
 
 
-    print("Generating Tofu for unicode characters between U+{} and U+{}".format(start_str, end_str))
-
+    print('Generating Tofu for unicode characters between U+{} and U+{}'.format(start_str, end_str))
 
     # return
     progressbar.streams.wrap_stderr()
     bar = progressbar.ProgressBar()
-    font = fontforge.font() # create a new font
+
+    # load template as string
+    font_template = None
+    with open('template.sfd') as file:
+        font_template = file.read()
+
+    # build sfd by adding each character
+    font_data = [font_template]
+    for i in bar(irange(start, end)):
+        font_data.append(gen_char(i))
+
+    # save sfd to disk (todo: figure out how to avoid saving)
+    with open(TEMP_FILE, 'w') as file:
+        file.write('\n'.join(font_data))
+
+    print('Loading spline database')
+    # load our sfd and generate a usable font from it
+    font = fontforge.open(TEMP_FILE)
+    os.remove(TEMP_FILE)
     font.familyname = 'Tofu'
     font.fontname = 'Tofu'
     font.fullname = 'Tofu {} - {}'.format(start_str, end_str)
@@ -102,47 +102,45 @@ def main():
     font.version = '0.1'
     font.copyright = open('FONT_LICENSE', 'r').read()
 
-    # add template glyphs
-    for name, path in glyph_templates.items():
-        char = font.createChar(-1, 't:{}'.format(name))
-        char.importOutlines(gen_svg(path))
+    save_name = 'tofu_{}_{}.{}'.format(start_str, end_str, 'ttf' if args.ttf else 'otf')
+    print('Saving as {}'.format(save_name))
+    font.generate(save_name, flags=('short-post',))
 
-    # generate tofu glyphs
-    for i in bar(irange(start, end)):
-        char = font.createChar(i)
-        char.addReference("t:base")
 
-        codepoint = hex(i)[2:].upper()
-        codepoint = codepoint.zfill(6 if len(codepoint) > 4 else 4)
+def gen_char(codepoint):
+    hex_str = '{:X}'.format(codepoint)
+    hex_str = hex_str.zfill(6 if len(hex_str) > 4 else 4)
 
-        for i,c in enumerate(codepoint):
-            # padding + margin * (i % size)
-            if len(codepoint) is 4:
-                x, y = 19 + 32 * (i % 2), 3 + 48 * (i // 2)
-            else:
-                x, y = 3 + 32 * (i % 3), 3 + 48 * (i // 3)
-            char.addReference(
-                't:{}'.format(c),
-                matrix.translate(x * SCALE_FACTOR, -y * SCALE_FACTOR)
+    # todo: make this better
+    x_count = len(hex_str) // 2
+    y_count = len(hex_str) // x_count
+
+    references = ['Refer: 0 -1 N 1 0 0 1 0 0 2']
+    for i,c in enumerate(hex_str):
+        references.append(
+            'Refer: {id_glyph} -1 N 1 0 0 1 {x} {y} 2'.format(
+                id_glyph=int(c, 16) + 1,
+                x=align_point(i % 2, x_count, 255, 90, 1000),
+                y=align_point(i // 2, y_count, 425, 90, 1000, True) - 200
             )
+        )
 
-        char.width = GLYPH_SIZE
-        char.left_side_bearing = SCALE_FACTOR
-        char.right_side_bearing = SCALE_FACTOR
+    return (
+        'StartChar: uni{codepoint}\n'
+        'Encoding: {id_font} {id_uni} {id_glyph}\n'
+        'Width: 1000\n'
+        'Flags: HW\n'
+        'LayerCount: 2\n'
+        'Fore\n'
+        '{references}\n'
+        'EndChar\n'
+    ).format(
+        codepoint=hex_str,
+        id_font=codepoint,
+        id_uni=codepoint,
+        id_glyph=codepoint+17,
+        references='\n'.join(references),
+    )
 
-    save_name = 'tofu_{}_{}.{}'.format(start_str, end_str, 'otf' if args.otf else 'ttf')
-    print("Saving as {}".format(save_name))
-    font.generate(save_name)
-
-
-def gen_svg(path):
-    with open(TEMP_FILE, 'w') as f:
-        f.write('<svg viewBox="0 0 {} {}" fill="#000"><path d="{}"/></svg>'.format(
-            GLYPH_TEMPLATE_SIZE, GLYPH_TEMPLATE_SIZE, path
-        ))
-
-    return TEMP_FILE
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
