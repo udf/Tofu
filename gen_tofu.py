@@ -38,37 +38,31 @@ def main():
     end_str = args.end[0].upper()
 
     if len(start_str) > 5 or len(start_str) < 4:
-        print('Start argument must be 4 or 5 characters long. Ex. 0000 or 10000.')
-        exit(2)
+        raise ValueError('Start argument must be 4 or 5 characters long. Ex. 0000 or 10000.')
 
     if len(end_str) > 5 or len(end_str) < 4:
-        print('End argument must be 4 or 5 characters long. Ex. 0000 or 10000.')
-        exit(2)
+        raise ValueError('End argument must be 4 or 5 characters long. Ex. 0000 or 10000.')
 
     try:
         start = int(start_str, 16)
     except ValueError:
-        print('Start argument must only contain hexadecimal characters.')
-        exit(2)
+        raise ValueError('Start argument must only contain hexadecimal characters.')
 
     try:
         end = int(end_str, 16)
     except ValueError:
-        print('End argument must only contain hexadecimal characters.')
-        exit(2)
+        raise ValueError('End argument must only contain hexadecimal characters.')
 
     if start >= end:
-        print('Start must be less than end')
-        exit(2)
+        raise ValueError('Start must be less than end')
 
     if (end - start + (1 if args.ttf else 2) + 17) > 65535:
         print('Range is (note: 17 spaces are reserved for template glyphs)', end - start + 1 + 17)
 
         if args.otf:
-            print('Range max is 65534 characters long. Otf includes one by default?')
+            raise ValueError('Range max is 65534 characters long. Otf includes one by default?')
         else:
-            print('Range max is 65535 characters long.')
-        exit(2)
+            raise ValueError('Range max is 65535 characters long.')
 
 
     print('Generating Tofu for unicode characters between U+{} and U+{}'.format(start_str, end_str))
@@ -143,4 +137,8 @@ def gen_char(codepoint):
     )
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(e)
+        exit(2)
