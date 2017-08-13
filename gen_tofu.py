@@ -167,7 +167,7 @@ def main():
 
     if args.release or len(args.ranges) <= 0:
         print('Generating release fonts (plane 0 and 1)')
-        args.ranges = [irange(0, 0x20000)]
+        args.ranges = [irange(0, 0x1FFFF)]
         args.split = 8192
 
     if args.split <= 1024:
@@ -176,7 +176,7 @@ def main():
 
     ranges = merge_ranges(args.ranges)
     ranges_str = [range_hex_str(r) for r in ranges]
-    save_name = 'Tofu_{}.ttc'.format('_'.join(ranges_str))
+    save_name = 'Tofu_{}.ttc'.format('_'.join(ranges_str).replace('-', '_'))
     char_count = sum([len(r) for r in ranges])
     font_count = math.ceil(char_count / args.split)
 
@@ -187,7 +187,7 @@ def main():
 
     # return
     progressbar.streams.wrap_stderr()
-    bar = progressbar.ProgressBar(redirect_stdout=True, max_value=char_count)
+    bar = progressbar.ProgressBar(max_value=char_count)
 
     i = 0
     fonts = []
@@ -199,11 +199,13 @@ def main():
             font = font_builder(codepoint)
         font.add_char(codepoint)
         
-        bar.update(i)
         i += 1
+        bar.update(i)
 
     if font.needs_save:
         fonts.append(font.save())
+
+    bar.finish()
 
     print('saving as {}'.format(save_name), flush=True)
     try:
