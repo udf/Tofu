@@ -97,7 +97,6 @@ class font_builder(object):
         with open(save_name_tmp, 'w') as file:
             file.write('\n'.join(self.data))
 
-        #print('loading', save_name_tmp, flush=True)
         font = fontforge.open(save_name_tmp)
         os.remove(save_name_tmp)
         font.familyname = 'Tofu'
@@ -113,7 +112,6 @@ class font_builder(object):
     def add_char(self, codepoint):
         hex_str = format_codepoint(codepoint)
 
-        # todo: make this better
         x_count = len(hex_str) // 2
         y_count = len(hex_str) // x_count
 
