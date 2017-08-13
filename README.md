@@ -11,6 +11,7 @@ Because I wanted zero width characters in my code to be not zero width. I was tr
 ### Things that need to get fixed
  * It's not very readable when small. Make better tofu template
  * The size of the generated font collection can probably be made smaller
+ * The progress bar isn't smooth since the fontforge lib provides no way to measure its progress when loading the generated .sfd files
 
 ### This is stupid
 Yeah probably, but for its very specific use case it's not terribly bad.
