@@ -26,7 +26,7 @@ The syntax for the program is as follows. `gen_tofu.py 0000-FFFD [10000-1FFFF] [
 `0000` is the start of the first range  
 `FFFD` is the end of the first range  
 `10000` is the start of the second range (optional, you can use as many ranges as you want)  
-`1FFFF` is the end of the second range (optional) 
+`1FFFF` is the end of the second range (optional)  
 `X` is the number of characters that each font will contain (optional)
 
 ### License
