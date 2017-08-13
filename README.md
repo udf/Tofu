@@ -11,7 +11,7 @@ Because I wanted zero width characters in my code to be not zero width. I was tr
 
 ### Things that need to get fixed
  * It's not very readable when small. Make better tofu template
- * The size of the generated font collection can probably be made smaller
+ * The size of the generated font collection can probably be made smaller (for example by excluding unassigned characters)
  * The progress bar isn't smooth since the fontforge lib provides no way to measure its progress when loading the generated .sfd files
 
 ### This is stupid
@@ -22,11 +22,11 @@ Caching should take care of the intensive IO issue, if not then use a ramdisk.
 
 I used python3 for this, it may work in python2. If it does not please feel free to make a pull request to fix it but I am not actively supporting python2.
 
-The syntax for the program is as follows. `gen_tofu.py 0000-FFFD 10000-1FFFF [-s X]`  
+The syntax for the program is as follows. `gen_tofu.py 0000-FFFD [10000-1FFFF] [-s X]`  
 `0000` is the start of the first range  
 `FFFD` is the end of the first range  
-`10000` is the start of the second range  
-`1FFFF` is the end of the second range  
+`10000` is the start of the second range (optional, you can use as many ranges as you want)  
+`1FFFF` is the end of the second range (optional) 
 `X` is the number of characters that each font will contain (optional)
 
 ### License

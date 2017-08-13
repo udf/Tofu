@@ -16,8 +16,8 @@ def irange(start, end=None):
     else:
         return range(start, end+1)
 
-def ranges_overlap(r1, r2):
-    return r1[0] <= r2[-1] and r2[0] <= r1[-1]
+def ranges_mergeable(r1, r2):
+    return r1[0] <= (r2[-1]+1) and r2[0] <= (r1[-1]+1)
 
 def range_combine(r1, r2):
     return irange(min(r1[0], r2[0]), max(r1[-1], r2[-1]))
@@ -30,7 +30,7 @@ def merge_ranges(ranges):
     while found_overlap:
         found_overlap = False
         for i, j in itertools.permutations(range(len(ranges)), 2):
-            if ranges_overlap(ranges[i], ranges[j]):
+            if ranges_mergeable(ranges[i], ranges[j]):
                 new_range = range_combine(ranges[i], ranges[j])
                 print('Notice: merged ranges {} and {} to {}'.format(
                     range_hex_str(ranges[i]), range_hex_str(ranges[j]), range_hex_str(new_range)
@@ -185,7 +185,8 @@ def main():
     print('Generating Tofu for unicode characters between {} ({} chars, {} font(s))'.format(
         ', '.join(ranges_str), char_count, font_count
     ))
-    
+
+
     # return
     progressbar.streams.wrap_stderr()
     bar = progressbar.ProgressBar(redirect_stdout=True, max_value=char_count)
@@ -207,9 +208,15 @@ def main():
         fonts.append(font.save())
 
     print('saving as {}'.format(save_name), flush=True)
-    fonts[0].generateTtc(save_name, fonts[1:], layer=1,
-        flags=('short-post',), ttcflags=('merge',)
-    )
+    try:
+        fonts[0].generateTtc(save_name, fonts[1:], layer=1,
+            flags=('short-post',), ttcflags=('merge',)
+        )
+    except OSError:
+        print('Error saving, filename is probably too long, saving as tofu.ttc', flush=True)
+        fonts[0].generateTtc('tofu.ttc', fonts[1:], layer=1,
+            flags=('short-post',), ttcflags=('merge',)
+        )
 
 
 if __name__ == '__main__':
