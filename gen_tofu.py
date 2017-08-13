@@ -125,7 +125,7 @@ class font_builder(object):
             references.append(
                 'Refer: {id_glyph} -1 N 1 0 0 1 {x} {y} 2'.format(
                     id_glyph=int(c, 16) + 1,
-                    x=align_point(i % x_count, x_count, 255, 90, 1000),
+                    x=align_point(i % x_count, x_count, 255, 85, 1000),
                     y=align_point(i // x_count, y_count, 425, 90, 1000, True) - 200
                 )
             )
