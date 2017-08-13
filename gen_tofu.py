@@ -97,7 +97,7 @@ class font_builder(object):
         with open(save_name_tmp, 'w') as file:
             file.write('\n'.join(self.data))
 
-        print('loading', save_name_tmp, flush=True)
+        #print('loading', save_name_tmp, flush=True)
         font = fontforge.open(save_name_tmp)
         os.remove(save_name_tmp)
         font.familyname = 'Tofu'
@@ -160,12 +160,18 @@ def main():
     parser.add_argument('-s', '--split', default=8192, type=int, nargs='?',
                     help='how many characters to add to a font before creating a new one')
 
-    parser.add_argument('ranges', metavar='range', type=parse_hex_range, nargs='+',
+    parser.add_argument('ranges', metavar='range', type=parse_hex_range, nargs='*',
                     help='hex ranges for chars to generate (inclusive) Ex. 0000-1000 1F00-2F00')
 
-    parser.add_argument('-t', '--ttf', action='store_true',
-                    help='output to an ttf file rather than otf')
+    parser.add_argument('--release', action='store_true',
+                    help='generate release fonts for plane 0 and 1')
+
     args = parser.parse_args()
+
+    if args.release or len(args.ranges) <= 0:
+        print("Generating release fonts (plane 0 and 1)")
+        args.ranges = [irange(0, 0x20000)]
+        args.split = 8192
 
     if args.split <= 1024:
         args.split = parser.get_default('split')
@@ -201,7 +207,7 @@ def main():
     if font.needs_save:
         fonts.append(font.save())
 
-    print('saving as {}'.format(save_name))
+    print('saving as {}'.format(save_name), flush=True)
     fonts[0].generateTtc(save_name, fonts[1:], layer=1,
         flags=('short-post',), ttcflags=('merge',)
     )
