@@ -125,8 +125,8 @@ class font_builder(object):
             references.append(
                 'Refer: {id_glyph} -1 N 1 0 0 1 {x} {y} 2'.format(
                     id_glyph=int(c, 16) + 1,
-                    x=align_point(i % 2, x_count, 255, 90, 1000),
-                    y=align_point(i // 2, y_count, 425, 90, 1000, True) - 200
+                    x=align_point(i % x_count, x_count, 255, 90, 1000),
+                    y=align_point(i // x_count, y_count, 425, 90, 1000, True) - 200
                 )
             )
 
@@ -150,8 +150,7 @@ class font_builder(object):
 
         self.id_font += 1
         self.last_codepoint = codepoint
-        if not self.needs_save:
-            self.needs_save = True
+        self.needs_save = True
 
 
 def main():
@@ -183,7 +182,7 @@ def main():
     char_count = sum([len(r) for r in ranges])
     font_count = math.ceil(char_count / args.split)
 
-    print('Generating Tofu for unicode characters between {} ({} chars, {} fonts)'.format(
+    print('Generating Tofu for unicode characters between {} ({} chars, {} font(s))'.format(
         ', '.join(ranges_str), char_count, font_count
     ))
     
