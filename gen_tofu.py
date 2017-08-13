@@ -92,7 +92,7 @@ class font_builder(object):
     def save(self):
         start_str = format_codepoint(self.start)
         end_str = format_codepoint(self.last_codepoint)
-        base_name = "tofu_{}_{}".format(start_str, end_str)
+        base_name = 'tofu_{}_{}'.format(start_str, end_str)
         save_name_tmp = '{}.sfd'.format(base_name)
         with open(save_name_tmp, 'w') as file:
             file.write('\n'.join(self.data))
@@ -168,7 +168,7 @@ def main():
     args = parser.parse_args()
 
     if args.release or len(args.ranges) <= 0:
-        print("Generating release fonts (plane 0 and 1)")
+        print('Generating release fonts (plane 0 and 1)')
         args.ranges = [irange(0, 0x20000)]
         args.split = 8192
 
