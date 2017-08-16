@@ -6,6 +6,7 @@ import argparse
 import os
 import itertools
 import math
+import string
 
 FONT_LICENSE = open('FONT_LICENSE', 'r').read()
 TEMPLATE = open('template.sfd', 'r').read()
@@ -22,8 +23,17 @@ def ranges_mergeable(r1, r2):
 def range_combine(r1, r2):
     return irange(min(r1[0], r2[0]), max(r1[-1], r2[-1]))
 
-def range_hex_str(r):
-    return 'U{:04X}-U{:04X}'.format(r[0], r[-1])
+class range_formatter(string.Formatter):
+    def format_field(self, value, spec):
+        if isinstance(value, range):
+            spec = spec.split(':', 1)
+            value = '{0}{2:04X}{1}{0}{3:04X}'.format(
+                spec[0],
+                ''.join(spec[1:]) or '-', # empty separators are replaced by '-'
+                value[0], value[-1]
+            )
+            spec = ''
+        return super(range_formatter, self).format_field(value, spec)
 
 def merge_ranges(ranges):
     found_overlap = True
@@ -32,8 +42,9 @@ def merge_ranges(ranges):
         for i, j in itertools.permutations(range(len(ranges)), 2):
             if ranges_mergeable(ranges[i], ranges[j]):
                 new_range = range_combine(ranges[i], ranges[j])
-                print('Notice: merged ranges {} and {} to {}'.format(
-                    range_hex_str(ranges[i]), range_hex_str(ranges[j]), range_hex_str(new_range)
+                print(range_formatter().format(
+                    'Notice: merged ranges {} and {} to {}',
+                    ranges[i], ranges[j], new_range
                 ))
                 ranges[i] = new_range
                 del ranges[j]
@@ -103,7 +114,7 @@ class font_builder(object):
         font.fontname = 'Tofu'
         font.fullname = 'Tofu {} - {}'.format(start_str, end_str)
         font.comment = 'The complete opposite of a font'
-        font.version = '0.1'
+        font.version = '0.2'
         font.copyright = FONT_LICENSE
 
         self.needs_save = False
@@ -175,13 +186,12 @@ def main():
         print('Warning: Specified split value too small, it has been reverted to the default ({})'.format(args.split))
 
     ranges = merge_ranges(args.ranges)
-    ranges_str = [range_hex_str(r) for r in ranges]
-    save_name = 'Tofu_{}.ttc'.format('_'.join(ranges_str).replace('-', '_'))
+    save_name = 'Tofu_{}.ttc'.format('_'.join([range_formatter().format('{::_}', r) for r in ranges]))
     char_count = sum([len(r) for r in ranges])
     font_count = math.ceil(char_count / args.split)
 
     print('Generating Tofu for unicode characters between {} ({} chars, {} font(s))'.format(
-        ', '.join(ranges_str), char_count, font_count
+        ', '.join([range_formatter().format('{:U+}', r) for r in ranges]), char_count, font_count
     ))
 
 
